@@ -1,88 +1,92 @@
-let qrColor = '#000000';
-let bgColor = '#ffffff';
+let logoData = "";
+let cropper = null;
 
-// Configuração comum para os seletores
-const pickrConfig = {
-    theme: 'nano',
-    components: {
-        preview: true,
-        opacity: false,
-        hue: true,
-        interaction: {
-            input: true,
-            save: true // O botão salvar continua lá como você queria
-        }
+const logoInput = document.getElementById('logoInput');
+const modalCrop = document.getElementById('modal-crop');
+const imageToCrop = document.getElementById('image-to-crop');
+
+logoInput.addEventListener('change', function(e) {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            imageToCrop.src = event.target.result;
+            modalCrop.classList.add('active');
+            if (cropper) cropper.destroy();
+            cropper = new Cropper(imageToCrop, {
+                aspectRatio: 1,
+                viewMode: 1,
+                dragMode: 'move',
+                autoCropArea: 1
+            });
+        };
+        reader.readAsDataURL(files[0]);
     }
-};
-
-// Seletor da Cor do QR Code
-const pickrQR = Pickr.create({
-    el: '#color-picker-qr',
-    default: qrColor,
-    ...pickrConfig
-}).on('change', (color) => {
-    qrColor = color.toHEXA().toString();
-    gerarQRCode(true); // Atualiza instantaneamente ao mudar
 });
 
-// Seletor da Cor de Fundo
-const pickrBG = Pickr.create({
-    el: '#color-picker-bg',
-    default: bgColor,
-    ...pickrConfig
-}).on('change', (color) => {
-    bgColor = color.toHEXA().toString();
-    gerarQRCode(true); // Atualiza instantaneamente ao mudar
-});
-
-function togglePersonalizacao() {
-    const panel = document.getElementById('custom-panel');
-    panel.classList.toggle('hidden');
+function cancelarCrop() {
+    modalCrop.classList.remove('active');
+    logoInput.value = "";
 }
+
+function salvarCrop() {
+    const canvas = cropper.getCroppedCanvas({ width: 500, height: 500 });
+    logoData = canvas.toDataURL("image/png");
+    modalCrop.classList.remove('active');
+    if(!document.getElementById('resultado').classList.contains('hidden')) gerarQRCode(true);
+}
+
+['cor-qr', 'cor-fundo-qr', 'cor-nome', 'cor-funcao'].forEach(id => {
+    document.getElementById(id).addEventListener('input', () => gerarQRCode(true));
+});
 
 function gerarQRCode(isUpdate = false) {
     const nome = document.getElementById('nome').value;
+    const trabalho = document.getElementById('trabalho').value;
+    const email = document.getElementById('email').value;
     const telefone = document.getElementById('telefone').value;
-    const qrcodeDiv = document.getElementById('qrcode');
-    const captureArea = document.getElementById('capture-area');
-    const label = document.getElementById('label-contato');
-    const resultado = document.getElementById('resultado');
-
+    
     if (!nome || !telefone) {
-        alert("Preencha as informações!");
+        if (!isUpdate) alert("Preencha Nome e Telefone!");
         return;
     }
 
-    qrcodeDiv.innerHTML = "";
-    captureArea.style.backgroundColor = bgColor;
-    label.innerText = nome;
-    label.style.color = qrColor;
+    document.getElementById('panel-estilo').classList.add('open');
+    document.getElementById('resultado').classList.remove('hidden');
 
-    // Formato VCard para salvar na agenda
-    const vcard = `BEGIN:VCARD\nVERSION:3.0\nFN:${nome}\nTEL:${telefone}\nEND:VCARD`;
+    const corQR = document.getElementById('cor-qr').value;
+    const corFundoQR = document.getElementById('cor-fundo-qr').value;
+    const corNome = document.getElementById('cor-nome').value;
+    const corFuncao = document.getElementById('cor-funcao').value;
 
-    new QRCode(qrcodeDiv, {
-        text: vcard,
-        width: 200,
-        height: 200,
-        colorDark : qrColor,
-        colorLight : bgColor,
-        correctLevel : QRCode.CorrectLevel.H
+    document.getElementById('label-nome').innerText = nome;
+    document.getElementById('label-nome').style.color = corNome;
+    document.getElementById('label-funcao').innerText = trabalho;
+    document.getElementById('label-funcao').style.color = corFuncao;
+    document.getElementById('capture-area').style.backgroundColor = corFundoQR;
+
+    const container = document.getElementById('canvas-container');
+    container.innerHTML = ""; 
+
+    const vcard = `BEGIN:VCARD\nVERSION:3.0\nFN:${nome}\nTITLE:${trabalho}\nTEL:${telefone}\nEMAIL:${email}\nEND:VCARD`;
+
+    const qrCode = new QRCodeStyling({
+        width: 250, height: 250, type: "svg", data: vcard, image: logoData,
+        dotsOptions: { color: corQR, type: "rounded" },
+        backgroundOptions: { color: corFundoQR },
+        imageOptions: { crossOrigin: "anonymous", margin: 5, imageSize: 0.5 }
     });
 
-    if (!isUpdate) {
-        resultado.classList.remove('hidden');
-    }
+    qrCode.append(container);
+    if (!isUpdate) window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
 }
 
-async function baixarImagemCompleta() {
+async function downloadQR() {
     const area = document.getElementById('capture-area');
-    const nome = document.getElementById('nome').value;
-    
-    // Gera a imagem da área de captura
-    const canvas = await html2canvas(area);
+    const canvas = await html2canvas(area, { scale: 3, useCORS: true });
     const link = document.createElement('a');
-    link.download = `QR_${nome.replace(/\s+/g, '_')}.png`;
+    // NOME DO ARQUIVO ATUALIZADO
+    link.download = `ConnectQR_${document.getElementById('nome').value.replace(/\s+/g, '_')}.png`;
     link.href = canvas.toDataURL();
     link.click();
 }

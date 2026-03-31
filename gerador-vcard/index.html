@@ -3,64 +3,92 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerador QR Code Pro</title>
+    <title>Connect QR - Studio</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script type="text/javascript" src="https://unpkg.com/qr-code-styling@1.5.0/lib/qr-code-styling.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/themes/nano.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+
+    <style>
+        .config-panel { transition: all 0.4s ease; max-height: 0; overflow: hidden; opacity: 0; }
+        .config-panel.open { max-height: 800px; opacity: 1; margin-top: 1.5rem; margin-bottom: 1.5rem; }
+        #modal-crop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 100; align-items: center; justify-content: center; padding: 20px; }
+        #modal-crop.active { display: flex; }
+        .crop-container { background: #1e293b; padding: 20px; border-radius: 20px; width: 100%; max-width: 450px; }
+    </style>
 </head>
+<body class="bg-[#020617] text-white font-sans min-h-screen flex items-center justify-center p-4">
 
-
-<body class="bg-[#0f172a] text-white min-h-screen flex items-center justify-center p-6">
-
-    <div class="bg-[#1e293b] p-8 rounded-3xl shadow-2xl max-w-md w-full border border-gray-800">
-        <h1 class="text-2xl font-bold mb-6 text-center text-blue-400">Gerador de QR Code</h1>
+    <div class="max-w-md w-full bg-[#1e293b] rounded-3xl p-8 shadow-2xl border border-gray-800">
+        <h1 class="text-3xl font-bold mb-2 text-center bg-gradient-to-r from-blue-400 to-emerald-400 bg-clip-text text-transparent italic">
+            Connect QR
+        </h1>
         
-        <div class="space-y-4 mb-6">
-            <input type="text" id="nome" placeholder="Nome do Contato" 
-                class="w-full bg-[#0f172a] border border-gray-700 rounded-xl p-4 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+        <div class="space-y-4">
+            <input type="text" id="nome" placeholder="Nome Completo" class="w-full bg-[#0f172a] border border-gray-700 rounded-xl p-4 outline-none text-white focus:ring-2 focus:ring-blue-500">
+            <input type="text" id="trabalho" placeholder="Cargo ou Empresa" class="w-full bg-[#0f172a] border border-gray-700 rounded-xl p-4 outline-none text-white focus:ring-2 focus:ring-blue-500">
+            <input type="email" id="email" placeholder="E-mail" class="w-full bg-[#0f172a] border border-gray-700 rounded-xl p-4 outline-none text-white focus:ring-2 focus:ring-blue-500">
+            <input type="text" id="telefone" placeholder="Telefone" class="w-full bg-[#0f172a] border border-gray-700 rounded-xl p-4 outline-none text-white focus:ring-2 focus:ring-blue-500">
             
-            <input type="text" id="telefone" placeholder="Telefone (Ex: 81988887777)" 
-                class="w-full bg-[#0f172a] border border-gray-700 rounded-xl p-4 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all">
-            
-            <button onclick="gerarQRCode()" 
-                class="w-full bg-blue-600 hover:bg-blue-700 font-bold py-4 rounded-xl transition-all active:scale-95 shadow-lg">
-                Gerar meu QR Code
+            <div class="flex flex-col space-y-2">
+                <label class="text-[10px] text-gray-500 uppercase ml-2 tracking-widest font-bold">Logo Central</label>
+                <input type="file" id="logoInput" accept="image/*" class="w-full bg-[#0f172a] border border-gray-700 rounded-xl p-3 text-sm file:bg-blue-600 file:rounded-full file:border-0 file:text-white file:px-4 file:mr-4 cursor-pointer">
+            </div>
+
+            <button onclick="gerarQRCode()" class="w-full bg-blue-600 hover:bg-blue-700 font-bold py-4 rounded-xl shadow-lg transition-all active:scale-95">
+                Gerar QR Code Profissional
             </button>
         </div>
 
-        <div id="resultado" class="hidden space-y-6 pt-6 border-t border-gray-700">
-            <div id="capture-area" class="bg-white p-6 rounded-2xl mx-auto w-fit shadow-inner">
-                <div id="qrcode"></div>
-                <p id="label-contato" class="text-black font-bold text-center mt-4 text-lg"></p>
+        <div id="resultado" class="hidden mt-8 flex flex-col items-center">
+            <div id="capture-area" class="p-8 rounded-2xl bg-white flex flex-col items-center shadow-2xl transition-colors duration-300">
+                <div id="canvas-container"></div>
+                <p id="label-nome" class="mt-4 font-bold text-lg uppercase tracking-wider text-black text-center"></p>
+                <p id="label-funcao" class="font-bold text-sm text-center"></p>
             </div>
 
-            <div class="flex flex-col gap-3">
-                <button onclick="togglePersonalizacao()" 
-                    class="w-full bg-gray-700 hover:bg-gray-600 font-medium py-3 rounded-xl transition-all flex items-center justify-center gap-2">
-                    🎨 Personalizar Cores
-                </button>
-
-                <div id="custom-panel" class="hidden p-4 bg-[#0f172a] rounded-2xl flex justify-around items-center gap-4">
-                    <div class="text-center">
-                        <span class="text-[10px] text-gray-400 block mb-2 uppercase">QR Code</span>
-                        <div id="color-picker-qr"></div>
+            <div id="panel-estilo" class="config-panel w-full bg-[#0f172a] rounded-2xl border border-gray-700 p-5 shadow-inner">
+                <h3 class="text-xs font-bold uppercase text-blue-400 mb-4 text-center tracking-widest">Customização</h3>
+                <div class="grid grid-cols-2 gap-6">
+                    <div class="flex flex-col gap-2">
+                        <label class="text-[10px] text-gray-500 uppercase text-center font-bold">Cor QR</label>
+                        <input type="color" id="cor-qr" value="#000000" class="w-full h-12 bg-transparent border-0 cursor-pointer p-0">
                     </div>
-                    <div class="text-center">
-                        <span class="text-[10px] text-gray-400 block mb-2 uppercase">Fundo</span>
-                        <div id="color-picker-bg"></div>
+                    <div class="flex flex-col gap-2">
+                        <label class="text-[10px] text-gray-500 uppercase text-center font-bold">Cor Fundo</label>
+                        <input type="color" id="cor-fundo-qr" value="#ffffff" class="w-full h-12 bg-transparent border-0 cursor-pointer p-0">
+                    </div>
+                    <div class="flex flex-col gap-2">
+                        <label class="text-[10px] text-gray-500 uppercase text-center font-bold">Cor Nome</label>
+                        <input type="color" id="cor-nome" value="#000000" class="w-full h-12 bg-transparent border-0 cursor-pointer p-0">
+                    </div>
+                    <div class="flex flex-col gap-2">
+                        <label class="text-[10px] text-gray-500 uppercase text-center font-bold">Cor Função</label>
+                        <input type="color" id="cor-funcao" value="#6b7280" class="w-full h-12 bg-transparent border-0 cursor-pointer p-0">
                     </div>
                 </div>
+            </div>
+            
+            <button onclick="downloadQR()" class="w-full bg-emerald-600 hover:bg-emerald-700 py-4 rounded-xl font-bold shadow-lg transition-all active:scale-95 uppercase tracking-tighter">
+                Baixar QR
+            </button>
+        </div>
+    </div>
 
-                <button onclick="baixarImagemCompleta()" 
-                    class="w-full bg-emerald-600 hover:bg-emerald-700 font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2">
-                    ⬇️ Baixar Imagem
-                </button>
+    <div id="modal-crop">
+        <div class="crop-container flex flex-col gap-4">
+            <h2 class="text-center font-bold text-blue-400 uppercase">Ajuste o Recorte</h2>
+            <div class="h-64 bg-black rounded-lg overflow-hidden">
+                <img id="image-to-crop" src="">
+            </div>
+            <div class="flex gap-2">
+                <button onclick="cancelarCrop()" class="flex-1 bg-gray-700 p-4 rounded-xl font-bold uppercase text-xs">Cancelar</button>
+                <button onclick="salvarCrop()" class="flex-1 bg-blue-600 p-4 rounded-xl font-bold uppercase text-xs">Salvar</button>
             </div>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/pickr.min.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
