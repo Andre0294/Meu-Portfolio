@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador QR Code Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/themes/nano.min.css"/>
+</head>
+
+
+<body class="bg-[#0f172a] text-white min-h-screen flex items-center justify-center p-6">
+
+    <div class="bg-[#1e293b] p-8 rounded-3xl shadow-2xl max-w-md w-full border border-gray-800">
+        <h1 class="text-2xl font-bold mb-6 text-center text-blue-400">Gerador de QR Code</h1>
+        
+        <div class="space-y-4 mb-6">
+            <input type="text" id="nome" placeholder="Nome do Contato" 
+                class="w-full bg-[#0f172a] border border-gray-700 rounded-xl p-4 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+            
+            <input type="text" id="telefone" placeholder="Telefone (Ex: 81988887777)" 
+                class="w-full bg-[#0f172a] border border-gray-700 rounded-xl p-4 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+            
+            <button onclick="gerarQRCode()" 
+                class="w-full bg-blue-600 hover:bg-blue-700 font-bold py-4 rounded-xl transition-all active:scale-95 shadow-lg">
+                Gerar meu QR Code
+            </button>
+        </div>
+
+        <div id="resultado" class="hidden space-y-6 pt-6 border-t border-gray-700">
+            <div id="capture-area" class="bg-white p-6 rounded-2xl mx-auto w-fit shadow-inner">
+                <div id="qrcode"></div>
+                <p id="label-contato" class="text-black font-bold text-center mt-4 text-lg"></p>
+            </div>
+
+            <div class="flex flex-col gap-3">
+                <button onclick="togglePersonalizacao()" 
+                    class="w-full bg-gray-700 hover:bg-gray-600 font-medium py-3 rounded-xl transition-all flex items-center justify-center gap-2">
+                    🎨 Personalizar Cores
+                </button>
+
+                <div id="custom-panel" class="hidden p-4 bg-[#0f172a] rounded-2xl flex justify-around items-center gap-4">
+                    <div class="text-center">
+                        <span class="text-[10px] text-gray-400 block mb-2 uppercase">QR Code</span>
+                        <div id="color-picker-qr"></div>
+                    </div>
+                    <div class="text-center">
+                        <span class="text-[10px] text-gray-400 block mb-2 uppercase">Fundo</span>
+                        <div id="color-picker-bg"></div>
+                    </div>
+                </div>
+
+                <button onclick="baixarImagemCompleta()" 
+                    class="w-full bg-emerald-600 hover:bg-emerald-700 font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2">
+                    ⬇️ Baixar Imagem
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/pickr.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
